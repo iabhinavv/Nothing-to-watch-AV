@@ -209,12 +209,11 @@ print('genres', len(gc), '/ titles', len(titles))
 print('=== TYPE ===', dict(Counter(t['bucket'] for t in titles)))
 print('runtimes estimated from library medians:', n_est)
 
-n_art = sum(1 for t in titles if os.path.exists(os.path.join(ART_DIR, t['const'] + '.jpg')))
+n_art = sum(1 for t in titles if tmdb.get(t['const'], {}).get('p'))
 if not n_art:
-    print('=== ARTWORK === pipeline/artwork/ is empty — the wall will use generated tiles.')
-    print('                run  python3 fetch_tmdb.py  to download posters.')
+    print('=== ARTWORK === no TMDB poster paths found — run  python3 fetch_tmdb.py  first.')
 else:
-    print('=== ARTWORK === %d/%d titles have a local poster in pipeline/artwork/'
+    print('=== ARTWORK === %d/%d titles have TMDB poster paths (served from CDN)'
           % (n_art, len(titles)))
 
 # ---------------------------------------------------------------------------
@@ -240,9 +239,7 @@ for t in titles:
     }
     if t['orig']:  r['ot'] = t['orig']
     if t['est']:   r['e']  = 1
-    # Artwork is served from pipeline/artwork/<imdb-id>.jpg, so all the app needs
-    # is a flag saying the file was there at build time — the filename is derivable.
-    if os.path.exists(os.path.join(ART_DIR, t['const'] + '.jpg')): r['a'] = 1
+    if art.get('p'): r['p'] = art['p']
     if art.get('o'): r['ov'] = art['o']     # TMDB overview, shown above the title
     slim.append(r)
 
@@ -574,11 +571,7 @@ const SEED_RATINGS = __SEED_RATINGS__;    /* IMDb: {id: 1-10} */</script>
 (function(){
 "use strict";
 
-// Artwork lives beside the pipeline that fetched it. Relative to this file that
-// is pipeline/artwork/<imdb-id>.jpg — the flag "a" says the file existed at
-// build time, so the URL is derivable and no paths need storing per title.
-var ART_DIR="pipeline/artwork/";
-function artUrl(f){ return f.a ? ART_DIR+f.c+".jpg" : null; }
+function artUrl(f){ return f.p ? "https://image.tmdb.org/t/p/w185"+f.p : null; }
 
 var LS_KEY="ntwav-watched-v1", RATE_KEY="ntwav-ratings-v1";
 var MAXR=10;
@@ -609,7 +602,7 @@ TITLES.forEach(function(f){
   f.c2="rgb("+b+","+b+","+(b+2)+")";
   f.nt=norm(f.t+" "+(f.d||""));
 });
-var HAVE_ART=TITLES.some(function(f){ return !!f.a; });
+var HAVE_ART=TITLES.some(function(f){ return !!f.p; });
 
 // ===========================================================================
 // THE LENS
