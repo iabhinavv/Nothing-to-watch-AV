@@ -805,7 +805,17 @@ function draw(){
       ctx.moveTo(wpx[q0],wpy[q0]); ctx.lineTo(wpx[q1],wpy[q1]);
       ctx.lineTo(wpx[q2],wpy[q2]); ctx.lineTo(wpx[q3],wpy[q3]); ctx.closePath();
       ctx.globalAlpha=dim*0.9;
-      if(img){ ctx.save(); ctx.clip(); ctx.drawImage(img,cx-w/2,cy-h/2,w,h); ctx.restore(); }
+      if(img){
+        ctx.save(); ctx.clip();
+        ctx.fillStyle="#000000"; ctx.fillRect(cx-w/2,cy-h/2,w,h);
+        var iw=img.naturalWidth||img.width||2, ih=img.naturalHeight||img.height||3;
+        var imgAspect=iw/ih, boxAspect=w/h;
+        var dw=w, dh=h, dx=cx-w/2, dy=cy-h/2;
+        if(boxAspect>imgAspect){ dw=h*imgAspect; dx=cx-dw/2; }
+        else { dh=w/imgAspect; dy=cy-dh/2; }
+        ctx.drawImage(img,dx,dy,dw,dh);
+        ctx.restore();
+      }
       else { ctx.fillStyle=f.c1; ctx.fill(); }
       ctx.globalAlpha=1;
       if(state.selected===f.id){ ctx.strokeStyle="#fafafa"; ctx.lineWidth=1.5; ctx.stroke(); }
@@ -818,8 +828,20 @@ function draw(){
     ctx.save();
     rrect(x,y,w,h,rad); ctx.clip();
     ctx.globalAlpha=dim;
+    ctx.fillStyle="#000000";
+    ctx.fillRect(x,y,w,h);
     if(img){
-      ctx.drawImage(img,x,y,w,h);
+      var iw=img.naturalWidth||img.width||2, ih=img.naturalHeight||img.height||3;
+      var imgAspect=iw/ih, boxAspect=w/h;
+      var dw=w, dh=h, dx=x, dy=y;
+      if(boxAspect>imgAspect){
+        dw=h*imgAspect;
+        dx=x+(w-dw)*0.5;
+      } else {
+        dh=w/imgAspect;
+        dy=y+(h-dh)*0.5;
+      }
+      ctx.drawImage(img,dx,dy,dw,dh);
     } else {
       var g=ctx.createLinearGradient(x,y,x,y+h);
       g.addColorStop(0,f.c1); g.addColorStop(1,f.c2);
@@ -839,6 +861,10 @@ function draw(){
     }
     ctx.globalAlpha=1;
     ctx.restore();
+
+    ctx.strokeStyle="#000000";
+    ctx.lineWidth=Math.max(1,Math.min(2.5,w*0.02));
+    rrect(x,y,w,h,rad); ctx.stroke();
 
     if(state.selected===f.id || i===hoverIdx){
       ctx.strokeStyle=state.selected===f.id?"#fafafa":"rgba(250,250,250,.5)";
